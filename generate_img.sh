@@ -15,19 +15,24 @@ if [ -f "$1" ]; then
     SCHEDULER=$(grep -E "^#\s*SCHEDULER=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
     MY_SEED=$(grep -E "^#\s*SEED=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
     MODEL_NAME=$(grep -E "^#\s*MODEL_NAME=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
-    EXTRA=$(grep -E "^#\s*EXTRA=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
+    EXTRA=$(grep -E "^#\s*EXTRA=" "$PROMPT_FILE" | cut -d'=' -f2)
+    NEGATIVE=$(grep -E "^#\s*NEGATIVE=" "$PROMPT_FILE" | cut -d'=' -f2 )
+    UPSCALER=$(grep -E "^#\s*UPSCALER=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
+    STRENGTH=$(grep -E "^#\s*STRENGTH=" "$PROMPT_FILE" | cut -d'=' -f2 | tr -d '[:space:]')
+
+
 
 
 
     # Wartości zapasowe (fallback), gdy w pliku nie ma danej linii
-    echo $RES_X, $RES_Y
     RES_X=${RES_X:-768}
     RES_Y=${RES_Y:-1024}
     STEPS=${STEPS:-8}
     CFG=${CFG:-1.5}
     SAMPLER=${SAMPLER:-euler}
     SCHEDULER=${SCHEDULER:-normal}
-    MY_SEED=${2:-$RANDOM}
+    MY_SEED=${MY_SEED:-$RANDOM}
+    STRENGTH=${STRENGTH:-0.22}
     MODEL_NAME=${MODEL_NAME:-theTrualityEngine_trualityENGINEPRO_f32.gguf}
 
     # Właściwy prompt (pomiń linie zaczynające się od #, połącz resztę w jedną linię)
@@ -46,13 +51,17 @@ else
 fi
 
 
+echo $RES_X, $RES_Y
 echo $PROMPT
 echo $MODEL_DIR
 echo $MODEL_NAME
 echo "steps: $STEPS"
-UPSCALE_MODEL="4x-UltraSharp"
+echo $ESRGAN
+echo $NEGATIVE
+echo $SCHEDULER
+echo $SAMPLER
 
-sd-cli -m $MODEL_DIR/$MODEL_NAME \
+sd-cli -v -m $MODEL_DIR/$MODEL_NAME \
 --cfg-scale $CFG \
 -H "$RES_Y" \
 -W "$RES_X" \
@@ -61,12 +70,12 @@ sd-cli -m $MODEL_DIR/$MODEL_NAME \
 --steps $STEPS \
 --embd-dir $EMBEDDINGS \
 --lora-model-dir $LORAS \
---strength 0.3 \
+--strength $STRENGTH \
 -o "render_${RES_X}_$(date +%s)_${MY_SEED}.png" \
--n "Stable_Yogis_SD1.5_Negatives-neg, cropped, cut off, out of frame, head out of frame, body out of frame, half-body shot" \
--p "${PROMPT}, Stable_Yogis_SD1.5_Positives" \
+-n "$NEGATIVE" \
+-p "${PROMPT}" \
 -s $MY_SEED \
 $EXTRA
-
+#--upscale-model $UPSCALER \
 
 
